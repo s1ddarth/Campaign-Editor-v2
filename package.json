@@ -1,0 +1,24 @@
+{
+  "name": "campaign-editor-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/s1ddarth/Campaign-Editor-v2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/s1ddarth/Campaign-Editor-v2/issues"
+  },
+  "homepage": "https://github.com/s1ddarth/Campaign-Editor-v2#readme",
+  "dependencies": {
+    "@grapesjs/studio-sdk": "^1.0.56"
+  }
+}
