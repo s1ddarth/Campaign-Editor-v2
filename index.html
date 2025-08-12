@@ -2,10 +2,8 @@
 <html lang="en">
 
 <head>
-  <!-- ... -->
-  <script src="https://unpkg.com/@grapesjs/studio-sdk/dist/index.umd.js"></script>
-
-  <link rel="stylesheet" href="https://unpkg.com/@grapesjs/studio-sdk/dist/style.css" />
+  <script src="node_modules/@grapesjs/studio-sdk/dist/index.umd.js"></script>
+  <link rel="stylesheet" href="node_modules/@grapesjs/studio-sdk/dist/style.css" />
 </head>
 
 <body>
@@ -27,9 +25,7 @@
         storageType: 'cloud'
       },
       storage: {
-        type: 'cloud',
-        autosaveChanges: 100,
-        autosaveIntervalMs: 10000
+        type: 'local'
       }
     });
   </script>
