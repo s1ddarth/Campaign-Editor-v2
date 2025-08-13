@@ -6,8 +6,10 @@
   <title>GrapesJS Basic Editor</title>
 
   <link rel="stylesheet" href="https://unpkg.com/grapesjs/dist/css/grapes.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
 
   <script src="https://unpkg.com/grapesjs"></script>
+  <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
   <style>
     body {
@@ -53,6 +55,27 @@
       storageManager: false,
       plugins: ['gjs-blocks-basic'],
       allowScripts: 1,
+      deviceManager: {
+        devices: [{
+          name: 'Mobile',
+          width: '400px',
+          widthMedia: '(max-width: 480px)',
+        }, {
+          name: 'Desktop',
+          width: '',
+          widthMedia: '',
+        }]
+      },
+    });
+
+    editor.on('load', () => {
+      const canvasDoc = editor.Canvas.getDocument();
+      const scripts = canvasDoc.querySelectorAll('script');
+      scripts.forEach(script => {
+        const newScript = document.createElement('script');
+        newScript.innerHTML = script.innerHTML;
+        canvasDoc.body.appendChild(newScript);
+      });
     });
 
     // Define a custom link component with editable traits for href and target
