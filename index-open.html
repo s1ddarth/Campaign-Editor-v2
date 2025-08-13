@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>GrapesJS Basic Editor</title>
@@ -14,18 +15,22 @@
       overflow: hidden;
       font-family: sans-serif;
     }
+
     .upload-container {
       position: absolute;
-      top: 10px;
-      left: 10px;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       z-index: 100;
-      background-color: white;
+      background-color: #444;
+      color: white;
       padding: 10px;
       border-radius: 5px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
   </style>
 </head>
+
 <body>
 
   <div class="upload-container">
@@ -84,12 +89,12 @@
         return;
       }
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         const htmlContent = e.target.result;
         editor.setComponents(htmlContent);
         alert('HTML file loaded successfully!');
       };
-      reader.onerror = function() {
+      reader.onerror = function () {
         alert('Failed to read the file.');
       };
       reader.readAsText(file);
@@ -128,4 +133,5 @@
   </script>
 
 </body>
+
 </html>
