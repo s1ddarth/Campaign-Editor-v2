@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>GrapesJS Basic Editor</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/grapesjs/dist/css/grapes.min.css">
+
+  <script src="https://unpkg.com/grapesjs"></script>
+
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+    .upload-container {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 100;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="upload-container">
+    <label for="file-upload">Upload an HTML file:</label>
+    <input type="file" id="file-upload" accept=".html">
+    <button id="load-file-btn">Load</button>
+    <button id="download-file-btn">Download</button>
+  </div>
+
+  <div id="gjs">
+    <h1>Hello World!</h1>
+    <p>Upload an HTML file or start editing now!</p>
+  </div>
+
+  <script type="text/javascript">
+    const editor = grapesjs.init({
+      container: '#gjs',
+      height: '100vh',
+      width: 'auto',
+      storageManager: false,
+      plugins: ['gjs-blocks-basic'],
+    });
+
+    // Define a custom link component with editable traits for href and target
+    editor.Components.addType('link-button', {
+      model: {
+        defaults: {
+          tagName: 'a',
+          traits: [
+            {
+              type: 'text',
+              label: 'Href',
+              name: 'href',
+              placeholder: 'e.g., https://google.com'
+            },
+            {
+              type: 'text',
+              label: 'Target',
+              name: 'target',
+              placeholder: 'e.g., _blank'
+            }
+          ],
+        },
+      },
+      view: {},
+    });
+
+    // Handle the file upload functionality
+    const fileInput = document.getElementById('file-upload');
+    const loadButton = document.getElementById('load-file-btn');
+    loadButton.addEventListener('click', () => {
+      const file = fileInput.files[0];
+      if (!file) {
+        alert('Please select an HTML file to upload.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const htmlContent = e.target.result;
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = htmlContent;
+        const styleTags = tempDiv.querySelectorAll('style');
+        let cssContent = '';
+        styleTags.forEach(tag => {
+          cssContent += tag.innerHTML;
+          tag.remove();
+        });
+        tempDiv.querySelectorAll('link[rel="stylesheet"]').forEach(link => link.remove());
+        const bodyContent = tempDiv.innerHTML;
+        editor.setComponents(bodyContent);
+        editor.setStyle(cssContent);
+        alert('HTML file loaded successfully!');
+      };
+      reader.onerror = function() {
+        alert('Failed to read the file.');
+      };
+      reader.readAsText(file);
+    });
+
+    // Handle the download functionality
+    const downloadButton = document.getElementById('download-file-btn');
+    downloadButton.addEventListener('click', () => {
+      const html = editor.getHtml();
+      const css = editor.getCss();
+      const fullHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My GrapesJS Page</title>
+  <style>
+    ${css}
+  </style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+      const blob = new Blob([fullHtml], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'index.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      alert('File downloaded successfully!');
+    });
+  </script>
+
+</body>
+</html>
