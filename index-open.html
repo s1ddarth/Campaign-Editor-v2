@@ -47,6 +47,7 @@
       width: 'auto',
       storageManager: false,
       plugins: ['gjs-blocks-basic'],
+      allowScripts: 1,
     });
 
     // Define a custom link component with editable traits for href and target
@@ -85,18 +86,7 @@
       const reader = new FileReader();
       reader.onload = function(e) {
         const htmlContent = e.target.result;
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = htmlContent;
-        const styleTags = tempDiv.querySelectorAll('style');
-        let cssContent = '';
-        styleTags.forEach(tag => {
-          cssContent += tag.innerHTML;
-          tag.remove();
-        });
-        tempDiv.querySelectorAll('link[rel="stylesheet"]').forEach(link => link.remove());
-        const bodyContent = tempDiv.innerHTML;
-        editor.setComponents(bodyContent);
-        editor.setStyle(cssContent);
+        editor.setComponents(htmlContent);
         alert('HTML file loaded successfully!');
       };
       reader.onerror = function() {
