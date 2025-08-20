@@ -70,12 +70,64 @@
 
     editor.on('load', () => {
       const canvasDoc = editor.Canvas.getDocument();
-      const scripts = canvasDoc.querySelectorAll('script');
-      scripts.forEach(script => {
-        const newScript = document.createElement('script');
-        newScript.innerHTML = script.innerHTML;
-        canvasDoc.body.appendChild(newScript);
-      });
+
+      // Swiper initialization code
+      const swiperScript = canvasDoc.createElement('script');
+      swiperScript.innerHTML = `
+        document.addEventListener('DOMContentLoaded', function () {
+          new Swiper('.swiper', {
+            effect: 'fade',
+            fadeEffect: {
+              crossFade: true,
+            },
+            pagination: {
+              el: '.swiper-pagination',
+            },
+            navigation: {
+              nextEl: ".swiper-button-next",
+              prevEl: ".swiper-button-prev",
+            },
+            touchEventsTarget: 'container',
+            a11y: {
+              enabled: true
+            },
+            on: {
+              init: function () {
+                console.log('Swiper initialized');
+                const swiperWrapper = document.querySelector('.swiper-wrapper');
+                if (swiperWrapper) {
+                  swiperWrapper.classList.remove('swiper-invisible');
+                }
+              }
+            }
+          });
+        });
+      `;
+      canvasDoc.body.appendChild(swiperScript);
+
+      // Scroll-to-top button script
+      const scrollTopScript = canvasDoc.createElement('script');
+      scrollTopScript.innerHTML = `
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollTopBtn = document.getElementById("scrollTopBtn");
+            if (scrollTopBtn) {
+              window.onscroll = function () { scrollFunction() };
+              
+              function scrollFunction() {
+                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
+                  scrollTopBtn.style.display = "block";
+                } else {
+                  scrollTopBtn.style.display = "none";
+                }
+              }
+
+              scrollTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              });
+            }
+        });
+      `;
+      canvasDoc.body.appendChild(scrollTopScript);
     });
 
     // Define a custom link component with editable traits for href and target
