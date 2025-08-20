@@ -154,6 +154,12 @@
       view: {},
     });
 
+    editor.BlockManager.add('link-button-block', {
+      label: 'Link Button',
+      category: 'Custom',
+      content: { type: 'link-button' }
+    });
+
     // Handle the file upload functionality
     const fileInput = document.getElementById('file-upload');
     const loadButton = document.getElementById('load-file-btn');
