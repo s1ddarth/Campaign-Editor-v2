@@ -114,7 +114,6 @@
       /* box-shadow: 0 4px 6px rgba(0,0,0,0.1); */
       width: 100%;
       max-width: 314px;
-      overflow: hidden;
       /* Override */
       background-color: #ffffff;
       border: 1px solid #000000;
@@ -129,8 +128,6 @@
     /* Carousel Styles */
     .swiper {
       border-radius: 16px;
-      overflow: visible;
-      /* Allow nav buttons to be positioned outside its bounds */
     }
 
     .swiper-invisible {
@@ -245,14 +242,6 @@
       height: 25px;
       background-color: #2e4989;
       border-radius: 50%;
-    }
-
-    .swiper-button-prev {
-      left: -43px;
-    }
-
-    .swiper-button-next {
-      right: -43px;
     }
 
     /* Arrow within the button */
@@ -374,7 +363,7 @@
     <div class="campaign-card">
       <!-- Swiper Carousel -->
       <div class="swiper">
-        <div class="swiper-wrapper swiper-invisible">
+        <div class="swiper-wrapper">
           <div class="swiper-slide">
             <img src="https://savekukrail.thereisnoearthb.com/pictures/Carousel/slide1.webp" alt="Kukrail Forest image"
               loading="lazy">
@@ -546,7 +535,7 @@
         },
         on: {
           init: function () {
-            document.querySelector('.swiper-wrapper').classList.remove('swiper-invisible');
+            console.log('Swiper initialized');
           }
         }
       });
