@@ -30,6 +30,26 @@
       border-radius: 5px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
+
+    .link-button {
+      display: block;
+      width: 100%;
+      max-width: 314px;
+      background-color: white;
+      color: black;
+      text-align: center;
+      padding: 15px;
+      margin-bottom: 1.2rem;
+      border-radius: 10px;
+      text-decoration: none;
+      border: 1px solid #000000;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .link-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
   </style>
 </head>
 
@@ -68,42 +88,120 @@
       },
     });
 
+    // Register a component type for link button with editable href/text
+    editor.DomComponents.addType('link-button', {
+      model: {
+        defaults: {
+          tagName: 'a',
+          classes: ['link-button'],
+          attributes: {
+            href: 'https://www.example.com',
+            target: '_blank',
+          },
+          content: 'Link Button',
+          traits: [
+            {
+              type: 'text',
+              label: 'Link Text',
+              name: 'content',
+              changeProp: 1
+            },
+            {
+              type: 'text',
+              label: 'URL',
+              name: 'href',
+              changeProp: 1
+            },
+            {
+              type: 'checkbox',
+              label: 'Open in new tab',
+              name: 'target',
+              valueTrue: '_blank',
+              valueFalse: ''
+            }
+          ]
+        },
+        init() {
+          this.on('change:content', (model, value) => {
+            this.set('content', value);
+          });
+        },
+        toHTML() {
+          const attr = this.getAttributes();
+          return `<a class="link-button" href="${attr.href}"${attr.target ? ' target="_blank"' : ''}>${this.get('content')}</a>`;
+        }
+      },
+      view: {
+        events: {
+          'dblclick': 'editContent',
+          'keydown': 'handleKeydown',
+          'blur': 'handleBlur'
+        },
+        editContent(e) {
+          this.el.contentEditable = true;
+          this.el.focus();
+        },
+        handleKeydown(e) {
+          if (e.key === 'Backspace' && this.el.innerText.trim().length === 0) {
+            e.preventDefault();
+          }
+
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            this.updateContent();
+            this.el.blur();
+          }
+        },
+        handleBlur(e) {
+          this.updateContent();
+        },
+        updateContent() {
+          const newText = this.el.innerText.trim();
+          if (newText) {
+            this.model.set('content', newText);
+          }
+          this.el.contentEditable = false;
+        }
+      }
+    });
+
+
     editor.on('load', () => {
       const canvasDoc = editor.Canvas.getDocument();
 
       // Swiper initialization code
       const swiperScript = canvasDoc.createElement('script');
       swiperScript.innerHTML = `
-        document.addEventListener('DOMContentLoaded', function () {
-          new Swiper('.swiper', {
-            effect: 'fade',
-            fadeEffect: {
-              crossFade: true,
-            },
-            pagination: {
-              el: '.swiper-pagination',
-            },
-            navigation: {
-              nextEl: ".swiper-button-next",
-              prevEl: ".swiper-button-prev",
-            },
-            touchEventsTarget: 'container',
-            a11y: {
-              enabled: true
-            },
-            on: {
-              init: function () {
-                console.log('Swiper initialized');
-                const swiperWrapper = document.querySelector('.swiper-wrapper');
-                if (swiperWrapper) {
-                  swiperWrapper.classList.remove('swiper-invisible');
-                }
-              }
-            }
-          });
-        });
-      `;
-      canvasDoc.body.appendChild(swiperScript);
+  document.addEventListener('DOMContentLoaded', function () {
+    new Swiper('.swiper', {
+      effect: 'fade',
+      fadeEffect: {
+        crossFade: true,
+      },
+      pagination: {
+        el: '.swiper-pagination',
+      },
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+      },
+      touchEventsTarget: 'container',
+      a11y: {
+        enabled: true
+      },
+      on: {
+        init: function () {
+          console.log('Swiper initialized');
+          const swiperWrapper = document.querySelector('.swiper-wrapper');
+          if (swiperWrapper) {
+            swiperWrapper.classList.remove('swiper-invisible');
+          }
+        }
+      }
+    });
+  });
+`;
+      canvasDoc.head.appendChild(swiperScript);
 
       // Scroll-to-top button script
       const scrollTopScript = canvasDoc.createElement('script');
@@ -130,29 +228,8 @@
       canvasDoc.body.appendChild(scrollTopScript);
     });
 
-    // Define a custom link component with editable traits for href and target
-    editor.Components.addType('link-button', {
-      model: {
-        defaults: {
-          tagName: 'a',
-          traits: [
-            {
-              type: 'text',
-              label: 'Href',
-              name: 'href',
-              placeholder: 'e.g., https://google.com'
-            },
-            {
-              type: 'text',
-              label: 'Target',
-              name: 'target',
-              placeholder: 'e.g., _blank'
-            }
-          ],
-        },
-      },
-      view: {},
-    });
+    // Removed the conflicting and less-functional component definition.
+    // The working definition is the one above using editor.DomComponents.addType.
 
     editor.BlockManager.add('link-button-block', {
       label: 'Link Button',
@@ -208,7 +285,6 @@
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
-      // alert('File downloaded successfully!');
       console.log('File downloaded successfully!');
     });
   </script>
