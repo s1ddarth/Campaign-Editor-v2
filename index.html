@@ -165,77 +165,14 @@
       }
     });
 
-
-    editor.on('load', () => {
-      const canvasDoc = editor.Canvas.getDocument();
-
-      // Swiper initialization code
-      const swiperScript = canvasDoc.createElement('script');
-      swiperScript.innerHTML = `
-  document.addEventListener('DOMContentLoaded', function () {
-    new Swiper('.swiper', {
-      effect: 'fade',
-      fadeEffect: {
-        crossFade: true,
-      },
-      pagination: {
-        el: '.swiper-pagination',
-      },
-      navigation: {
-        nextEl: ".swiper-button-next",
-        prevEl: ".swiper-button-prev",
-      },
-      touchEventsTarget: 'container',
-      a11y: {
-        enabled: true
-      },
-      on: {
-        init: function () {
-          console.log('Swiper initialized');
-          const swiperWrapper = document.querySelector('.swiper-wrapper');
-          if (swiperWrapper) {
-            swiperWrapper.classList.remove('swiper-invisible');
-          }
-        }
-      }
-    });
-  });
-`;
-      canvasDoc.head.appendChild(swiperScript);
-
-      // Scroll-to-top button script
-      const scrollTopScript = canvasDoc.createElement('script');
-      scrollTopScript.innerHTML = `
-        document.addEventListener('DOMContentLoaded', function() {
-            const scrollTopBtn = document.getElementById("scrollTopBtn");
-            if (scrollTopBtn) {
-              window.onscroll = function () { scrollFunction() };
-              
-              function scrollFunction() {
-                if (document.body.scrollTop > 20 || document.documentElement.scrollTop > 20) {
-                  scrollTopBtn.style.display = "block";
-                } else {
-                  scrollTopBtn.style.display = "none";
-                }
-              }
-
-              scrollTopBtn.addEventListener('click', () => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              });
-            }
-        });
-      `;
-      canvasDoc.body.appendChild(scrollTopScript);
-    });
-
-    // Removed the conflicting and less-functional component definition.
-    // The working definition is the one above using editor.DomComponents.addType.
-
     editor.BlockManager.add('link-button-block', {
       label: 'Link Button',
       category: 'Custom',
       content: { type: 'link-button' }
     });
+
+    // Store the content of <head> from uploaded file
+    let customHeadContent = '';
 
     // Handle the file upload functionality
     const fileInput = document.getElementById('file-upload');
@@ -249,7 +186,36 @@
       const reader = new FileReader();
       reader.onload = function (e) {
         const htmlContent = e.target.result;
-        editor.setComponents(htmlContent);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlContent, 'text/html');
+
+        customHeadContent = doc.head.innerHTML;
+
+        const canvas = editor.Canvas;
+        const canvasHead = canvas.getDocument().head;
+
+        canvasHead.innerHTML = '';
+
+        // Add external stylesheets from the loaded files
+        doc.head.querySelectorAll('link[rel="stylesheet"]').forEach(linkEl => {
+          const newLink = canvas.getDocument().createElement('link');
+          newLink.rel = 'stylesheet';
+          newLink.href = linkEl.href;
+          newLink.crossOrigin = linkEl.crossOrigin || '';
+          canvasHead.appendChild(newLink);
+        });
+
+        // Extract inline styles from the loaded file
+        let inlineStyles = '';
+        doc.head.querySelectorAll('style').forEach(styleEl => {
+          inlineStyles += styleEl.innerHTML;
+        });
+        if (inlineStyles) {
+          editor.setStyle(inlineStyles);
+        }
+
+        editor.setComponents(doc.body.innerHTML);
+
         alert('HTML file loaded successfully!');
       };
       reader.onerror = function () {
@@ -261,20 +227,25 @@
     // Handle the download functionality
     const downloadButton = document.getElementById('download-file-btn');
     downloadButton.addEventListener('click', () => {
-      const html = editor.getHtml();
+      const bodyHtml = editor.getHtml();
       const css = editor.getCss();
+
+      const headHtml = customHeadContent
+        ? customHeadContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        : `<meta charset="UTF-8">
+           <meta name="viewport" content="width=device-width, initial-scale=1.0">
+           <title>My GrapesJS Page</title>`;
+
       const fullHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>My GrapesJS Page</title>
+  ${headHtml}
   <style>
     ${css}
   </style>
 </head>
 <body>
-  ${html}
+  ${bodyHtml}
 </body>
 </html>`;
       const blob = new Blob([fullHtml], { type: 'text/html' });
