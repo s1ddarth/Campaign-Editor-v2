@@ -174,6 +174,52 @@
     // Store the content of <head> from uploaded file
     let customHeadContent = '';
 
+    let lastLoadedBody = null;
+
+    // Function to execute scripts in the GrapesJS Canvas
+    function executeCanvasScripts(bodyElement) {
+      const canvas = editor.Canvas;
+      const canvasDoc = canvas.getDocument();
+
+      // Sequentially load external scripts to maintain order
+      const externalScripts = Array.from(bodyElement.querySelectorAll('script[src]'));
+      const loadScript = (index) => {
+        if (index >= externalScripts.length) {
+          // Run inline scripts
+          let inlineScriptContent = '';
+          bodyElement.querySelectorAll('script:not([src])').forEach(scriptEl => {
+            // Remove DOMContentLoaded wrapper to run the code immediately
+            const regex = /document\.addEventListener\(\s*['"]DOMContentLoaded['"]\s*,\s*function\s*\(\s*\)\s*\{([\s\S]*)\}\s*\);?/i;
+            const match = scriptEl.innerHTML.trim().match(regex);
+            if (match) {
+              inlineScriptContent += match[1];
+            } else {
+              inlineScriptContent += scriptEl.innerHTML;
+            }
+            inlineScriptContent += '\n;';
+          });
+
+          if (inlineScriptContent) {
+            try {
+              canvas.getWindow().eval(inlineScriptContent);
+            } catch (e) {
+              console.error('Error executing dynamic script:', e);
+            }
+          }
+          return;
+        }
+
+        const scriptEl = externalScripts[index];
+        const newScript = canvasDoc.createElement('script');
+        newScript.src = scriptEl.src;
+        newScript.onload = () => loadScript(index + 1);
+        canvasDoc.body.appendChild(newScript);
+      };
+
+      // Start loading scripts
+      loadScript(0);
+    }
+
     // Handle the file upload functionality
     const fileInput = document.getElementById('file-upload');
     const loadButton = document.getElementById('load-file-btn');
@@ -189,14 +235,15 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlContent, 'text/html');
 
+        // Store the original head and body
         customHeadContent = doc.head.innerHTML;
+        lastLoadedBody = doc.body;
 
         const canvas = editor.Canvas;
         const canvasHead = canvas.getDocument().head;
+        canvasHead.innerHTML = ''; // Clear previous head content
 
-        canvasHead.innerHTML = '';
-
-        // Add external stylesheets from the loaded files
+        // Add external stylesheets
         doc.head.querySelectorAll('link[rel="stylesheet"]').forEach(linkEl => {
           const newLink = canvas.getDocument().createElement('link');
           newLink.rel = 'stylesheet';
@@ -205,7 +252,7 @@
           canvasHead.appendChild(newLink);
         });
 
-        // Extract inline styles from the loaded file
+        // Add inline styles
         let inlineStyles = '';
         doc.head.querySelectorAll('style').forEach(styleEl => {
           inlineStyles += styleEl.innerHTML;
@@ -214,7 +261,9 @@
           editor.setStyle(inlineStyles);
         }
 
+        // Set the body content and then execute its scripts
         editor.setComponents(doc.body.innerHTML);
+        executeCanvasScripts(doc.body);
 
         alert('HTML file loaded successfully!');
       };
@@ -229,25 +278,8 @@
     downloadButton.addEventListener('click', () => {
       const bodyHtml = editor.getHtml();
       const css = editor.getCss();
-
-      const headHtml = customHeadContent
-        ? customHeadContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-        : `<meta charset="UTF-8">
-           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-           <title>My GrapesJS Page</title>`;
-
-      const fullHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  ${headHtml}
-  <style>
-    ${css}
-  </style>
-</head>
-<body>
-  ${bodyHtml}
-</body>
-</html>`;
+      const finalHead = customHeadContent ? customHeadContent.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '') : `<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>My GrapesJS Page</title>`;
+      const fullHtml = `<!DOCTYPE html><html lang="en"><head>${finalHead}<style>${css}</style></head><body>${bodyHtml}</body></html>`;
       const blob = new Blob([fullHtml], { type: 'text/html' });
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
@@ -257,6 +289,14 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(a.href);
       console.log('File downloaded successfully!');
+    });
+
+    // Re-initialize scripts when entering preview mode
+    editor.on('run:preview', () => {
+      if (lastLoadedBody) {
+        // Re-run only the inline initialization scripts
+        executeCanvasScripts(lastLoadedBody);
+      }
     });
   </script>
 
