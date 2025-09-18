@@ -70,12 +70,29 @@
       text-align: center;
       margin-bottom: 2rem;
     }
+
+    .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 25px;
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: white;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .close-btn:hover {
+      color: #ccc;
+    }
   </style>
 </head>
 
 <body>
 
   <div id="link-selector">
+    <button id="close-selector-btn" class="close-btn">&times;</button>
     <h2>Select a campaign to start editing:</h2>
     <a href="https://savekukrail.thereisnoearthb.com" class="link-button">Save Kukrail</a>
     <a href="https://savenicobar.thereisnoearthb.com" class="link-button">Save Nicobar</a>
@@ -333,6 +350,21 @@
             alert('Failed to load content from the link. This might be due to CORS policy.');
             link.textContent = originalText;
           }
+        }
+      });
+
+      const closeBtn = document.getElementById('close-selector-btn');
+      const closeSelector = () => {
+        linkSelector.style.display = 'none';
+      };
+
+      if (closeBtn) {
+        closeBtn.addEventListener('click', closeSelector);
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && linkSelector.style.display !== 'none') {
+          closeSelector();
         }
       });
     }
