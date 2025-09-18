@@ -50,10 +50,36 @@
       transform: translateY(-3px);
       box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
     }
+
+    #link-selector {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #link-selector h2 {
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
   </style>
 </head>
 
 <body>
+
+  <div id="link-selector">
+    <h2>Select a campaign to start editing:</h2>
+    <a href="https://savekukrail.thereisnoearthb.com" class="link-button">Save Kukrail</a>
+    <a href="https://savenicobar.thereisnoearthb.com" class="link-button">Save Nicobar</a>
+  </div>
 
   <div class="upload-container">
     <label for="file-upload">Upload an HTML file:</label>
@@ -220,6 +246,97 @@
       loadScript(0);
     }
 
+    function convertRelativeUrlsToAbsolute(doc, baseUrl) {
+        const attributes = ['href', 'src'];
+        doc.querySelectorAll(attributes.map(attr => `[${attr}]`).join(', ')).forEach(el => {
+            for (const attr of attributes) {
+                const value = el.getAttribute(attr);
+                if (value) {
+                    if (value.startsWith('http') || value.startsWith('#') || value.startsWith('mailto:') || value.startsWith('tel:') || value.startsWith('data:')) {
+                        continue;
+                    }
+                    try {
+                        const absoluteUrl = new URL(value, baseUrl).href;
+                        el.setAttribute(attr, absoluteUrl);
+                    } catch (e) {
+                        console.warn(`Could not resolve URL for ${attr}="${value}" with base "${baseUrl}"`);
+                    }
+                }
+            }
+        });
+    }
+
+    // Function to load HTML content into the editor
+    function loadHtmlIntoEditor(htmlContent, baseUrl) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+
+      if (baseUrl) {
+        convertRelativeUrlsToAbsolute(doc, baseUrl);
+      }
+
+      // Store the original head and body
+      customHeadContent = doc.head.innerHTML;
+      lastLoadedBody = doc.body;
+
+      const canvas = editor.Canvas;
+      const canvasHead = canvas.getDocument().head;
+      canvasHead.innerHTML = ''; // Clear previous head content
+
+      // Add external stylesheets
+      doc.head.querySelectorAll('link[rel="stylesheet"]').forEach(linkEl => {
+        const newLink = canvas.getDocument().createElement('link');
+        newLink.rel = 'stylesheet';
+        newLink.href = linkEl.href;
+        newLink.crossOrigin = linkEl.crossOrigin || '';
+        canvasHead.appendChild(newLink);
+      });
+
+      // Add inline styles
+      let inlineStyles = '';
+      doc.head.querySelectorAll('style').forEach(styleEl => {
+        inlineStyles += styleEl.innerHTML;
+      });
+      if (inlineStyles) {
+        editor.setStyle(inlineStyles);
+      }
+
+      // Set the body content and then execute its scripts
+      editor.setComponents(doc.body.innerHTML);
+      executeCanvasScripts(doc.body);
+
+      alert('HTML file loaded successfully!');
+    }
+
+    // Handle link selection
+    const linkSelector = document.getElementById('link-selector');
+    if (linkSelector) {
+      linkSelector.addEventListener('click', async (e) => {
+        const link = e.target.closest('a');
+        if (link) {
+          e.preventDefault();
+          const url = link.href;
+          const originalText = link.textContent;
+
+          link.textContent = 'Loading...';
+
+          try {
+            const response = await fetch(url);
+            if (!response.ok) {
+              throw new Error(`Failed to fetch: ${response.statusText}`);
+            }
+            const htmlContent = await response.text();
+            loadHtmlIntoEditor(htmlContent, url);
+            linkSelector.style.display = 'none';
+          } catch (error) {
+            console.error('Error loading from URL:', error);
+            alert('Failed to load content from the link. This might be due to CORS policy.');
+            link.textContent = originalText;
+          }
+        }
+      });
+    }
+
     // Handle the file upload functionality
     const fileInput = document.getElementById('file-upload');
     const loadButton = document.getElementById('load-file-btn');
@@ -231,41 +348,7 @@
       }
       const reader = new FileReader();
       reader.onload = function (e) {
-        const htmlContent = e.target.result;
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlContent, 'text/html');
-
-        // Store the original head and body
-        customHeadContent = doc.head.innerHTML;
-        lastLoadedBody = doc.body;
-
-        const canvas = editor.Canvas;
-        const canvasHead = canvas.getDocument().head;
-        canvasHead.innerHTML = ''; // Clear previous head content
-
-        // Add external stylesheets
-        doc.head.querySelectorAll('link[rel="stylesheet"]').forEach(linkEl => {
-          const newLink = canvas.getDocument().createElement('link');
-          newLink.rel = 'stylesheet';
-          newLink.href = linkEl.href;
-          newLink.crossOrigin = linkEl.crossOrigin || '';
-          canvasHead.appendChild(newLink);
-        });
-
-        // Add inline styles
-        let inlineStyles = '';
-        doc.head.querySelectorAll('style').forEach(styleEl => {
-          inlineStyles += styleEl.innerHTML;
-        });
-        if (inlineStyles) {
-          editor.setStyle(inlineStyles);
-        }
-
-        // Set the body content and then execute its scripts
-        editor.setComponents(doc.body.innerHTML);
-        executeCanvasScripts(doc.body);
-
-        alert('HTML file loaded successfully!');
+        loadHtmlIntoEditor(e.target.result);
       };
       reader.onerror = function () {
         alert('Failed to read the file.');
